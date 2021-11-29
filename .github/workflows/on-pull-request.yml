@@ -17,6 +17,18 @@ jobs:
           path: |
             ${{ env.POETRY_CACHE_FOLDER }}
           key:  poetry-pr-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
-      - run: poetry install
-      - id: black-check
-        run: poetry run poe check_format
+
+      - name: Set up the project
+        run: poetry install
+
+      - name: Check formatting
+        run: poetry run poe check-format
+
+      - name: Check linting
+        run: poetry run poe lint
+
+      - name: Test
+        run: poetry run poe test
+
+      - name: Build
+        run: poetry build

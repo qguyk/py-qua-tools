@@ -1,23 +1,44 @@
 name: released
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version'
+        required: false
+        default: ''
   release:
     types: [released]
 
 jobs:
-  publish:
-    runs-on: ubuntu-20.04
+  Build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.project-version.outputs.version }}
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions/setup-python@v1
         with:
           python-version: 3.7
+
       - uses: Gr1N/setup-poetry@v4
+
       - name: Build package
         run: |
           export RELEASE_VERSION="${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           poetry version ${RELEASE_VERSION}
           poetry build
+
+      - name: Get version from project
+        id: project-version
+        run: echo ::set-output name=version::$(poetry version -s)
+
+  publish:
+    needs: [Build]
+    runs-on: ubuntu-20.04
+    if: github.event.inputs.version != '' && github.event.inputs.version == needs.Build.outputs.version
+    steps:
+
       - name: Update pypi
         run: |
           pip install twine
